@@ -2,6 +2,11 @@ import openai
 import os
 import streamlit as st
 
+#################    ADDED THIS  ############################
+#Need to add this to integrate with portkey url
+from portkey_ai import PORTKEY_GATEWAY_URL, createHeaders, api_key
+############################################################
+
 # Setting page title and header
 st.set_page_config(page_title="ChattyBot", page_icon='🖥️', menu_items=None)
 st.markdown("<h1 style='text-align: center;'>Chatty Bot  🖥️</h1>", unsafe_allow_html=True)
@@ -10,6 +15,15 @@ st.markdown("<h1 style='text-align: center;'>Chatty Bot  🖥️</h1>", unsafe_a
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 openai.organization = os.environ.get("OPENAI_ORGANIZATION")
 
+#################    ADDED THIS  ############################
+#add these options to your openai calls *PLEASE MAKE SURE YOUR ZSCALER IS TURNED OFF*
+openai.base_url = "https://api.portkey.ai/v1/"
+# openai.base_url = PORTKEY_GATEWAY_URL
+openai.default_headers=createHeaders(
+     provider="openai",
+     api_key="PORTKEY_API_KEY"
+)
+############################################################
 # Check if API key is set
 if not openai.api_key:
     st.error("Error: OPENAI_API_KEY environment variable not set.")
@@ -72,10 +86,10 @@ def generate_response(prompt):
     response = completion.choices[0].message.content
     st.session_state['messages'].append({"role": "assistant", "content": response})
 
-    total_tokens_2 = completion.usage.total_tokens
-    prompt_tokens_2 = completion.usage.prompt_tokens
-    completion_tokens_2 = completion.usage.completion_tokens
-    return response, total_tokens_2, prompt_tokens_2, completion_tokens_2
+    total_tokens1 = completion.usage.total_tokens
+    prompt_tokens1 = completion.usage.prompt_tokens
+    completion_tokens1 = completion.usage.completion_tokens
+    return response, total_tokens1, prompt_tokens1, completion_tokens1
 
 # Containers for chat history and text input
 response_container = st.container()
@@ -95,9 +109,9 @@ with container:
 
         # Calculate cost based on the selected model
         if model_name == "GPT-4o":
-            cost = (prompt_tokens * (2.5/1000000) + completion_tokens * (10/1000000))
+            cost = total_tokens * 0.005 / 1000
         else:  # GPT-4o-mini
-            cost = (prompt_tokens * (0.15/1000000) + completion_tokens * (.6/1000000))
+            cost = (prompt_tokens * 0.00015 + completion_tokens * 0.0006) / 1000
 
         st.session_state['cost'].append(cost)
         st.session_state['total_cost'] += cost
